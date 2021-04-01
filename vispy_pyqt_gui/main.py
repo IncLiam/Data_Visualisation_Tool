@@ -193,8 +193,8 @@ class CanvasSimulation(vispy.app.Canvas):
         print("FPS - %.2f" % fps)
 
 
-# Class for Vispy Heat Map for skin output
-class CanvasSkin(vispy.app.Canvas):
+# Class for Vispy Heat Map for sensors output
+class CanvasSensors(vispy.app.Canvas):
 
     def __init__(self, *args):
         # Image to be displayed
@@ -577,9 +577,9 @@ class USBConnection:
 
 
 # Class containing GUI setup and basic functions
-class WidgetGallery(QWidget):
+class GuiMainWindow(QWidget):
     def __init__(self, parent=None):
-        super(WidgetGallery, self).__init__(parent)
+        super(GuiMainWindow, self).__init__(parent)
 
         # Initialising all connection classes, BLE, USB, BT classic
         self.ble_connection = BLEConnection()
@@ -642,14 +642,14 @@ class WidgetGallery(QWidget):
         self.bottomLeftGroupBox.setParent(None)
         QApplication.processEvents()
 
-    def add_heat_map_skin(self, *args):
+    def add_heat_map_sensors(self, *args):
         print(args)
 
         self.bottomLeftGroupBox = None
         self.bottomLeftGroupBox = QGroupBox("Heat Map")
 
         self.canvas = None
-        self.canvas = CanvasSkin(args[0])  # if queue given as arg
+        self.canvas = CanvasSensors(args[0])  # if queue given as arg
         self.canvas.measure_fps(1, self.canvas.show_fps)
 
         layout = None
@@ -696,7 +696,7 @@ class WidgetGallery(QWidget):
         self.setLayout(self.mainLayout)
         self.show()
 
-    def add_graph_temp_sensor(self, *args):
+    def add_graph_sensor(self, *args):
         self.bottomLeftGroupBox = None
         self.bottomLeftGroupBox = QGroupBox("Graph Plot")
         print(args[0])
@@ -804,7 +804,7 @@ class WidgetGallery(QWidget):
 
             if self.bt_connection.start_bt_process(self.Data_queue1):
                 # show graph1 plot, non sim,  with queue
-                self.add_graph_temp_sensor(self.Data_queue1)
+                self.add_graph_sensor(self.Data_queue1)
                 buttons_disabler()
                 Button3.setEnabled(True)
             else:
@@ -851,7 +851,7 @@ class WidgetGallery(QWidget):
                 # # show heat map with queue
                 # self.add_heat_map_skin(self.Data_queue)
                 # show graph of individual sensor
-                self.add_graph_temp_sensor(self.Data_queue)
+                self.add_graph_sensor(self.Data_queue)
                 buttons_disabler(), Button3.setEnabled(True)
             else:
                 buttons_enabler()
@@ -961,10 +961,10 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('spawn', force=False)
 
     app = QApplication(sys.argv)
-    gallery = WidgetGallery()
+    main_window = GuiMainWindow()
 
     def end_connections():
-        gallery.connection_killer()
+        main_window.connection_killer()
 
     app.aboutToQuit.connect(end_connections)
     sys.exit(app.exec_())
