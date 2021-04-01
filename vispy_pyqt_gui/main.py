@@ -303,37 +303,6 @@ class CanvasSkin(vispy.app.Canvas):
         print("FPS - %.2f" % fps)
 
 
-# Class for a pyqtSignal that can create and emit() it (NOT USED)
-class SignalsClass(QObject):
-
-    Signal = QtCore.pyqtSignal()
-
-    def __init__(self, parent=None):
-        QtCore.QObject.__init__(self)
-
-    def boil(self):
-        self.Signal.emit()
-
-
-# Class for defining a worker thread that listens for a multiprocess event set then emits a pyqtSignal (NOT USED)
-class Worker(QRunnable):
-    """Worker thread"""
-    def __init__(self, pot, event):  # pot is a pyqtsignal
-        super(Worker, self).__init__()
-        self.pot = pot
-        self.event = event
-
-    @pyqtSlot()
-    def run(self):
-        """Your code goes in this function"""
-        print("in run of heat_map_worker")
-        while True:
-            if self.event.is_set():
-                print("detected event set")
-                self.event.clear()
-                self.pot.boil()
-
-
 # Class containing all objects and methods for Bluetooth Serial stack connection and disconnection
 class BTConnection:
     def __init__(self):
@@ -608,7 +577,7 @@ class USBConnection:
 
 
 # Class containing GUI setup and basic functions
-class WidgetGallery(QDialog):
+class WidgetGallery(QWidget):
     def __init__(self, parent=None):
         super(WidgetGallery, self).__init__(parent)
 
@@ -648,7 +617,7 @@ class WidgetGallery(QDialog):
         self.setWindowTitle("Hyve Dynamics Data Visualisation Tool")
         QApplication.setStyle(QStyleFactory.create("Fusion"))
 
-        # Removing help "?" button from QDialog
+        # Removing help "?" button
         self.setWindowFlags(
             QtCore.Qt.Window |
             QtCore.Qt.CustomizeWindowHint |
@@ -661,6 +630,7 @@ class WidgetGallery(QDialog):
         self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
         self.setWindowFlag(Qt.WindowMaximizeButtonHint, True)
         self.show()
+        self.center()
 
     def remove_heat_map(self):
         self.canvas._timer.stop()
@@ -929,7 +899,7 @@ class WidgetGallery(QDialog):
 
         text = QLabel(
             "<center>" \
-            "<img src=hyve_1080w.png>" \
+            "<img src=../images/hyve_1080w.png/>" \
             "<p>Data Visualisation Tool<br/>" \
             "Version 1.0<br/>" \
             "Copyright &copy; Hyve Dynamics Ltd.</p>" \
@@ -952,11 +922,11 @@ class WidgetGallery(QDialog):
 
         text = QLabel(
             "<center>" \
-            "<img src=hyve_icon_180.png>" \
+            "<img src=../images/hyve_icon_180.png>" \
             "<br/>" \
-            "<img src=hyve_icon_180.png>" \
+            "<img src=../images/hyve_icon_180.png>" \
             "<br/>" \
-            "<img src=hyve_icon_180.png>" \
+            "<img src=../images/hyve_icon_180.png>" \
             "</center>")
 
         layout = QVBoxLayout()
@@ -975,6 +945,13 @@ class WidgetGallery(QDialog):
         if self.bt_connection.in_BT_process_event.is_set():
             self.bt_connection.end_bt_process()
             print("killed bt")
+
+    # for centering the window on screen
+    def center(self):
+        qr = self.frameGeometry()
+        cp = QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 
 # Main method runs the GUI and some other processes following button clicks
