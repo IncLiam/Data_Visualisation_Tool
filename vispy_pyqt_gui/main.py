@@ -19,7 +19,7 @@ from vispy import gloo
 import serial
 import json
 import pyqtgraph as pg
-import queue
+import time
 
 
 class LogToSpreadsheet:
@@ -49,6 +49,7 @@ class LogToSpreadsheet:
         while not self.logging_stop_event.is_set():
             # TODO add code for logging to spreadsheet
             print("logging")
+            time.sleep(1)
             ...
 
         self.in_logging_process_event.clear()
@@ -439,7 +440,7 @@ class USBConnection:
         self.USB_disconnect_event.clear()
         self.process1 = aioprocessing.AioProcess(target=self.usb_process, args=())
         self.process1.start()
-        self.process1.join(1)  # if timeout is passed then connection established
+        self.process1.join(5)  # if timeout is passed then connection established
         if not self.process1.is_alive():
             print("process1 joined")
             self.Data_queue_visuals.close()
@@ -453,7 +454,12 @@ class USBConnection:
 
     def usb_process(self):
         self.in_USB_process_event.set()
-        ser = serial.Serial('COM5', baudrate=115200, timeout=0.1)  # USB
+        try:
+            ser = serial.Serial('COM5', baudrate=115200, timeout=0.1)  # USB
+        except:
+            print("did not connect to COM5 serial")
+            self.in_USB_process_event.clear()
+            return
         init_matrix_values = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
         matrix_values = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
 
@@ -716,7 +722,7 @@ class GuiMainWindow(QWidget):
         layout = QVBoxLayout()
         # layout.addWidget(Button0)
         # layout.addWidget(Button1)
-        # layout.addWidget(Button2)
+        layout.addWidget(Button2)
         layout.addWidget(Button3)
         layout.addWidget(Button4)
 
@@ -793,6 +799,7 @@ class GuiMainWindow(QWidget):
                 print("adding usb")
                 buttons_disabler(), Button3.setEnabled(True)
             else:
+                delete_connections()
                 buttons_enabler()
         Button2.clicked.connect(create_usb_connection)
 
@@ -802,6 +809,7 @@ class GuiMainWindow(QWidget):
                 print("adding simulation")
                 buttons_disabler(), Button3.setEnabled(True)
             else:
+                delete_connections()
                 buttons_enabler()
         Button4.clicked.connect(create_simulation)
 
