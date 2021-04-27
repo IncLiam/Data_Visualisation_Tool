@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
                              QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                              QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
                              QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-                             QVBoxLayout, QWidget, QDesktopWidget)
+                             QVBoxLayout, QWidget, QDesktopWidget, QMainWindow, QInputDialog)
 import asyncio
 import multiprocessing
 import aioprocessing
@@ -19,6 +19,112 @@ from vispy import gloo
 import serial
 import json
 import pyqtgraph as pg
+import queue
+
+
+class LogToSpreadsheet:
+    def __init__(self):
+        self.logging_stop_event = aioprocessing.AioEvent()
+        self.in_logging_process_event = aioprocessing.AioEvent()
+
+    def start_logging_process(self, data_queue_logging):
+        self.Data_queue_logging = data_queue_logging
+        self.logging_stop_event.clear()
+        self.process2 = aioprocessing.AioProcess(target=self.logging_process, args=())
+        self.process2.start()
+        self.process2.join(1)  # if timeout is passed then connection established
+        if not self.process2.is_alive():
+            print("process2 joined")
+            self.Data_queue_logging.close()
+            self.process2.terminate()
+            print("process2 ended \n", "Children processes still active:", multiprocessing.active_children())
+            return False
+        else:
+            print("process2 started")
+            return True
+
+    def logging_process(self):
+        self.in_logging_process_event.set()
+
+        while not self.logging_stop_event.is_set():
+            # TODO add code for logging to spreadsheet
+            print("logging")
+            ...
+
+        self.in_logging_process_event.clear()
+
+    def end_logging_process(self):
+        self.logging_stop_event.set()
+        self.process2.join()
+        print("process2 joined")
+        try:
+            self.process2.terminate()
+        except:
+            print("process2 terminate failed")
+            return False
+        print("process2 ended")
+        print("process2 ended \n", "Children processes still active:", multiprocessing.active_children())
+        return True
+
+
+# Class for simulating sensor matrix values
+class ConnectionSimulation:
+    def __init__(self):
+        self.Sim_disconnect_event = aioprocessing.AioEvent()
+        self.in_Sim_process_event = aioprocessing.AioEvent()
+
+    def start_sim_process(self, data_queue_visuals, data_queue_logging):
+        self.Data_queue_visuals = data_queue_visuals
+        self.Data_queue_logging = data_queue_logging
+        self.Sim_disconnect_event.clear()
+        self.process1 = aioprocessing.AioProcess(target=self.sim_process, args=())
+        self.process1.start()
+        self.process1.join(1)  # if timeout is passed then connection established
+        if not self.process1.is_alive():
+            print("process1 joined")
+            self.Data_queue_visuals.close()
+            self.Data_queue_logging.close()
+            self.process1.terminate()
+            print("process1 ended \n", "Children processes still active:", multiprocessing.active_children())
+            return False
+        else:
+            print("process1 started")
+            return True
+
+    def sim_process(self):
+        self.in_Sim_process_event.set()
+
+        while not self.Sim_disconnect_event.is_set():
+
+            matrix_values = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
+            matrix_values = matrix_values.clip(min=0)
+            matrix_values = np.rot90(matrix_values, 2)
+
+            if self.Data_queue_visuals.empty():
+                self.Data_queue_visuals.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
+            if self.Data_queue_logging.empty():
+                self.Data_queue_logging.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
+
+        # emptying data queues
+        while not self.Data_queue_visuals.empty():
+            self.Data_queue_visuals.get_nowait()
+        while not self.Data_queue_logging.empty():
+            self.Data_queue_logging.get_nowait()
+
+        self.in_Sim_process_event.clear()
+
+    def end_sim_process(self):  # also destroys process
+        self.Sim_disconnect_event.set()
+        self.process1.join()
+        print("process1 joined")
+        try:
+            self.process1.terminate()
+        except:
+            print("process1 terminate failed")
+            return False
+        print("process1 ended")
+        print("process1 ended \n", "Children processes still active:", multiprocessing.active_children())
+        return True
 
 
 # Class for Pyqtgraph plot for single sensor output
@@ -28,7 +134,9 @@ class PyqtgraphPlotSensor:
 
         self.args = args
         self.Data_queue = args[0]
+        self.selected_sensor = args[1]
         self.new_data = 0.
+        self.in_graph_event = aioprocessing.AioEvent()
 
         self.graphWidget = pg.GraphicsLayoutWidget()
         self.graphWidget.setBackground('w')
@@ -50,7 +158,6 @@ class PyqtgraphPlotSensor:
 
     def update1(self):
         self.data1[:-1] = self.data1[1:]  # shift data in the array one sample left
-        # (see also: np.roll)
         self.data1[-1] = self.new_data
         self.curve1.setData(self.data1)
 
@@ -58,145 +165,19 @@ class PyqtgraphPlotSensor:
     def update(self):
         if not self.Data_queue.empty():
             self.q_data = self.Data_queue.get_nowait()
+            # TODO create function to get sensor from int argument
             self.new_data = self.q_data[3, 1]
-            print(self.q_data)
-            print(self.new_data)
+            # print(self.q_data)
+            # print(self.new_data)
         self.update1()
-
-
-# Class for Pyqtgraph plot simulation
-class PyqtgraphPlotSimulation:
-
-    def __init__(self):
-        self.graphWidget = pg.GraphicsLayoutWidget()
-        self.p1 = self.graphWidget.addPlot()
-        self.data1 = np.random.normal(size=300)
-        pen = pg.mkPen(color=(255, 165, 0), width=4)
-        self.curve1 = self.p1.plot(self.data1, pen=pen)
-        self.graphWidget.setBackground('w')
-        self.ptr1 = 0
-
-        self.timer = pg.QtCore.QTimer()
-        self.timer.timeout.connect(self.update)
-        self.timer.start(50)
-
-    def update1(self):
-        self.data1[:-1] = self.data1[1:]  # shift data in the array one sample left
-        # (see also: np.roll)
-        self.data1[-1] = np.random.normal()
-        self.curve1.setData(self.data1)
-
-    # update all plots
-    def update(self):
-        self.update1()
-
-
-# Class for Vispy Heat map simulation
-class CanvasSimulation(vispy.app.Canvas):
-
-    def __init__(self):
-        # Image to be displayed
-        self.W, self.H = 8, 8
-        self.I = np.random.uniform(0, 1, (self.W, self.H)).astype(np.float32)
-        colors = color.get_colormap("jet").map(self.I).reshape(self.I.shape + (-1,))
-
-        # A simple texture quad
-        self.data = np.zeros(4, dtype=[('a_position', np.float32, 2),
-                                       ('a_texcoord', np.float32, 2)])
-
-        self.data['a_position'] = np.array([[0, 0], [self.W, 0], [0, self.H], [self.W, self.H]])
-        self.data['a_texcoord'] = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-
-        VERT_SHADER = """
-        // Uniforms
-        uniform mat4 u_model;
-        uniform mat4 u_view;
-        uniform mat4 u_projection;
-        uniform float u_antialias;
-
-        // Attributes
-        attribute vec2 a_position;
-        attribute vec2 a_texcoord;
-
-        // Varyings
-        varying vec2 v_texcoord;
-
-        // Main
-        void main (void)
-        {
-            v_texcoord = a_texcoord;
-            gl_Position = u_projection * u_view * u_model * vec4(a_position,0.0,1.0);
-        }
-        """
-
-        FRAG_SHADER = """
-        uniform sampler2D u_texture;
-        varying vec2 v_texcoord;
-        void main()
-        {
-            gl_FragColor = texture2D(u_texture, v_texcoord);
-            gl_FragColor.a = 1.0;
-        }
-
-        """
-
-        vispy.app.Canvas.__init__(self, keys='interactive', size=((self.W * 20), (self.H * 20)))
-
-        self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(colors, interpolation='linear', format='rgba')
-
-        self.program['u_texture'] = self.texture
-        self.program.bind(gloo.VertexBuffer(self.data))
-
-        self.view = np.eye(4, dtype=np.float32)
-        self.model = np.eye(4, dtype=np.float32)
-        self.projection = np.eye(4, dtype=np.float32)
-
-        self.program['u_model'] = self.model
-        self.program['u_view'] = self.view
-        self.projection = ortho(0, self.W, 0, self.H, -1, 1)
-        self.program['u_projection'] = self.projection
-
-        gloo.set_clear_color('white')
-
-        self._timer = vispy.app.Timer('auto', connect=self.update, start=True)
-
-    def on_resize(self, event):
-        width, height = event.physical_size
-        gloo.set_viewport(0, 0, width, height)
-        self.projection = ortho(0, width, 0, height, -100, 100)
-        self.program['u_projection'] = self.projection
-
-        # Compute the new size of the quad
-        r = width / float(height)
-        R = self.W / float(self.H)
-        if r < R:
-            w, h = width, width / R
-            x, y = 0, int((height - h) / 2)
-        else:
-            w, h = height * R, height
-            x, y = int((width - w) / 2), 0
-        self.data['a_position'] = np.array(
-            [[x, y], [x + w, y], [x, y + h], [x + w, y + h]])
-        self.program.bind(gloo.VertexBuffer(self.data))
-
-    def on_draw(self, event):
-        gloo.clear(color=True, depth=True)
-
-        self.I[...] = np.random.uniform(0, 1, (self.W, self.H)).astype(np.float32)
-
-        colors = color.get_colormap("Oranges").map(self.I).reshape(self.I.shape + (-1,))  # YlOrBr
-        self.texture.set_data(colors)
-        self.program.draw('triangle_strip')
-
-    def show_fps(self, fps):
-        print("FPS - %.2f" % fps)
 
 
 # Class for Vispy Heat Map for sensors output
 class CanvasSensors(vispy.app.Canvas):
 
     def __init__(self, *args):
+        self.in_heatmap_event = aioprocessing.AioEvent()
+
         # Image to be displayed
         self.W, self.H = 8, 4
         self.I = np.random.uniform(0, 1, (self.W, self.H)).astype(np.float32)
@@ -452,15 +433,17 @@ class USBConnection:
         self.USB_disconnect_event = aioprocessing.AioEvent()
         self.in_USB_process_event = aioprocessing.AioEvent()
 
-    def start_usb_process(self, data_queue):
-        self.Data_queue = data_queue
+    def start_usb_process(self, data_queue_visuals, data_queue_logging):
+        self.Data_queue_visuals = data_queue_visuals
+        self.Data_queue_logging = data_queue_logging
         self.USB_disconnect_event.clear()
         self.process1 = aioprocessing.AioProcess(target=self.usb_process, args=())
         self.process1.start()
         self.process1.join(1)  # if timeout is passed then connection established
         if not self.process1.is_alive():
             print("process1 joined")
-            self.Data_queue.close()
+            self.Data_queue_visuals.close()
+            self.Data_queue_logging.close()
             self.process1.terminate()
             print("process1 ended \n", "Children processes still active:", multiprocessing.active_children())
             return False
@@ -557,8 +540,16 @@ class USBConnection:
 
             #print(matrix_values)
 
-            if self.Data_queue.empty():
-                self.Data_queue.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
+            if self.Data_queue_visuals.empty():
+                self.Data_queue_visuals.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
+            if self.Data_queue_logging.empty():
+                self.Data_queue_logging.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
+
+        # emptying data queues
+        while not self.Data_queue_visuals.empty():
+            self.Data_queue_visuals.get_nowait()
+        while not self.Data_queue_logging.empty():
+            self.Data_queue_logging.get_nowait()
 
         self.in_USB_process_event.clear()
 
@@ -581,10 +572,12 @@ class GuiMainWindow(QWidget):
     def __init__(self, parent=None):
         super(GuiMainWindow, self).__init__(parent)
 
-        # Initialising all connection classes, BLE, USB, BT classic
+        # Initialising (creating instances of) all connection classes, BLE, USB, BT classic
         self.ble_connection = BLEConnection()
         self.usb_connection = USBConnection()
         self.bt_connection = BTConnection()
+        self.spreadsheet_logging = LogToSpreadsheet()
+        self.sim_connection = ConnectionSimulation()
 
         self.mainLayout = QGridLayout()
 
@@ -661,50 +654,16 @@ class GuiMainWindow(QWidget):
         self.setLayout(self.mainLayout)
         self.show()
 
-    def add_heat_map_simulation(self):
-
-        self.bottomLeftGroupBox = None
-        self.bottomLeftGroupBox = QGroupBox("Heat Map")
-
-        self.canvas = None
-        self.canvas = CanvasSimulation()  # if no queue given as arg
-        self.canvas.measure_fps(1, self.canvas.show_fps)
-
-        layout = None
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas.native)
-        self.bottomLeftGroupBox.setLayout(layout)
-
-        self.mainLayout.addWidget(self.bottomLeftGroupBox, 1, 0, 1, 2)
-        self.setLayout(self.mainLayout)
-        self.show()
-
-    def add_graph_simulation(self):
-        self.bottomLeftGroupBox = None
-        self.bottomLeftGroupBox = QGroupBox("Graph Plot")
-
-        self.graph1 = None
-        self.plotWidget1 = None
-        self.graph1 = PyqtgraphPlotSimulation()
-        self.plotWidget1 = self.graph1.graphWidget
-        layout = None
-        layout = QVBoxLayout()
-        layout.addWidget(self.plotWidget1)
-        self.bottomLeftGroupBox.setLayout(layout)
-
-        self.mainLayout.addWidget(self.bottomLeftGroupBox, 1, 0, 1, 2)
-        self.setLayout(self.mainLayout)
-        self.show()
-
     def add_graph_sensor(self, *args):
         self.bottomLeftGroupBox = None
         self.bottomLeftGroupBox = QGroupBox("Graph Plot")
         print(args[0])
+        print(args[1])
 
         self.graph1 = None
         self.plotWidget1 = None
 
-        self.graph1 = PyqtgraphPlotSensor(args[0])
+        self.graph1 = PyqtgraphPlotSensor(args[0], args[1])
 
         self.plotWidget1 = self.graph1.graphWidget
 
@@ -719,7 +678,7 @@ class GuiMainWindow(QWidget):
         self.show()
 
     def createTopLeftGroupBox(self):
-        self.topLeftGroupBox = QGroupBox("Main Menu")
+        self.topLeftGroupBox = QGroupBox("Connection")
 
         Button0 = QPushButton("Connect to Temp Sensor via BT")
         Button0.setStyleSheet("background-color: none; "
@@ -731,28 +690,18 @@ class GuiMainWindow(QWidget):
                                 #"height: 100px; "
                                 #"width: 200px; "
                                 )
-        Button2 = QPushButton("Connect to Skin")
+        Button2 = QPushButton("Connect to Sensors")
         Button2.setStyleSheet("background-color: none; "
                                 #"height: 100px; "
                                 #"width: 200px; "
                                 )
-        Button3 = QPushButton("Disconnect from Skin")
+        Button3 = QPushButton("Disconnect from Sensors")
         Button3.setStyleSheet("background-color: none; "
                                    #"height: 100px; "
                                    #"width: 200px; "
                                    )
-        Button4 = QPushButton("Show Heat Map")
+        Button4 = QPushButton("Simulate Connection to sensors")
         Button4.setStyleSheet("background-color: none; "
-                                   #"height: 100px; "
-                                   #"width: 200px; "
-                                   )
-        Button5 = QPushButton("Hide Visuals")
-        Button5.setStyleSheet("background-color: none; "
-                                   #"height: 100px; "
-                                   #"width: 200px; "
-                                   )
-        Button6 = QPushButton("Show Graph Plot")
-        Button6.setStyleSheet("background-color: none; "
                                    #"height: 100px; "
                                    #"width: 200px; "
                                    )
@@ -762,17 +711,15 @@ class GuiMainWindow(QWidget):
         Button2.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         Button3.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         Button4.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        Button5.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        Button6.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+
 
         layout = QVBoxLayout()
         # layout.addWidget(Button0)
         # layout.addWidget(Button1)
-        layout.addWidget(Button2)
-        # layout.addWidget(Button3)
+        # layout.addWidget(Button2)
+        layout.addWidget(Button3)
         layout.addWidget(Button4)
-        layout.addWidget(Button5)
-        layout.addWidget(Button6)
+
         self.topLeftGroupBox.setLayout(layout)
 
         def buttons_enabler():
@@ -781,8 +728,6 @@ class GuiMainWindow(QWidget):
             Button2.setEnabled(True)
             Button3.setEnabled(True)
             Button4.setEnabled(True)
-            Button5.setEnabled(True)
-            Button6.setEnabled(True)
             QApplication.processEvents()
 
         def buttons_disabler():
@@ -791,8 +736,6 @@ class GuiMainWindow(QWidget):
             Button2.setDisabled(True)
             Button3.setDisabled(True)
             Button4.setDisabled(True)
-            Button5.setDisabled(True)
-            Button6.setDisabled(True)
             QApplication.processEvents()
 
         buttons_enabler()
@@ -843,56 +786,30 @@ class GuiMainWindow(QWidget):
             Button3.clicked.connect(delete_ble_connection)
         Button1.clicked.connect(create_ble_connection)
 
-        # USB push button setup
+        # USB push button setup (to be modified)
         def create_usb_connection():  # create and start usb serial connection
             buttons_disabler()
-            self.Data_queue = aioprocessing.AioQueue()  # added every time as joining closes the queue
-            if self.usb_connection.start_usb_process(self.Data_queue):
-                # # show heat map with queue
-                # self.add_heat_map_skin(self.Data_queue)
-                # show graph of individual sensor
-                self.add_graph_sensor(self.Data_queue)
+            if self.add_usb_connection():
+                print("adding usb")
                 buttons_disabler(), Button3.setEnabled(True)
             else:
                 buttons_enabler()
-
-            def delete_usb_connection():
-                buttons_disabler()
-                if self.usb_connection.end_usb_process():
-                    # # remove heat map
-                    # self.remove_heat_map()
-                    # remove plot
-                    self.remove_graph()
-                    buttons_enabler()
-                else:
-                    buttons_disabler(), Button3.setEnabled(True)
-
-            Button3.clicked.connect(delete_usb_connection)
         Button2.clicked.connect(create_usb_connection)
 
-        # Heat map push button setup
-        def show_heat_map_simulation():
-            buttons_disabler(), Button5.setEnabled(True)
-            self.add_heat_map_simulation()
-
-            def hide_heat_map_simulation():
-                self.remove_heat_map()
+        def create_simulation():  # create and start usb serial connection
+            buttons_disabler()
+            if self.add_sim_connection():
+                print("adding simulation")
+                buttons_disabler(), Button3.setEnabled(True)
+            else:
                 buttons_enabler()
+        Button4.clicked.connect(create_simulation)
 
-            Button5.clicked.connect(hide_heat_map_simulation)
-        Button4.clicked.connect(show_heat_map_simulation)
-
-        # Graph plots push button setup
-        def show_graph_plot_simulation():
-            buttons_disabler(), Button5.setEnabled(True)
-            self.add_graph_simulation()
-
-            def hide_graph_plot_simulation():
-                self.remove_graph()
-                buttons_enabler()
-
-            Button5.clicked.connect(hide_graph_plot_simulation)
-        Button6.clicked.connect(show_graph_plot_simulation)
+        def delete_connections():
+            buttons_disabler()
+            self.connection_killer()
+            buttons_enabler()
+        Button3.clicked.connect(delete_connections)
 
     def createTopMiddleGroupBox(self):
         self.topMiddleGroupBox = QGroupBox("About")
@@ -911,14 +828,101 @@ class GuiMainWindow(QWidget):
         self.topMiddleGroupBox.setLayout(layout)
 
     def createTopRightGroupBox(self):
-        self.topRightGroupBox = QGroupBox("Settings")
+        self.topRightGroupBox = QGroupBox("Visuals")
+
+        Button4 = QPushButton("Show Heat Map")
+        Button4.setStyleSheet("background-color: none; "
+                                   # "height: 100px; "
+                                   # "width: 200px; "
+                                   )
+        Button5 = QPushButton("Hide Visuals")
+        Button5.setStyleSheet("background-color: none; "
+                                   # "height: 100px; "
+                                   # "width: 200px; "
+                                   )
+        Button6 = QPushButton("Show Graph Plot")
+        Button6.setStyleSheet("background-color: none; "
+                                   # "height: 100px; "
+                                   # "width: 200px; "
+                                   )
+
+        Button4.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        Button5.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        Button6.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
         layout = QVBoxLayout()
-        layout.addStretch(1)
+        layout.addWidget(Button4)
+        layout.addWidget(Button5)
+        layout.addWidget(Button6)
+        # layout.addStretch(1)
         self.topRightGroupBox.setLayout(layout)
+
+        def buttons_enabler():
+            Button4.setEnabled(True)
+            Button5.setEnabled(True)
+            Button6.setEnabled(True)
+            QApplication.processEvents()
+
+        def buttons_disabler():
+            Button4.setDisabled(True)
+            Button5.setDisabled(True)
+            Button6.setDisabled(True)
+            QApplication.processEvents()
+
+        buttons_enabler()
+
+        # Heat map push button setup
+        def show_heat_map():
+            buttons_disabler()
+            hide_visuals()
+            try:
+                self.add_heat_map_sensors(self.Data_queue_visuals)
+            except:
+                print("connect to sensors ?")
+            buttons_enabler()
+        Button4.clicked.connect(show_heat_map)
+
+        # Graph plots push button setup
+        def show_graph_plot():
+            buttons_disabler()
+            hide_visuals()
+            selected_sensor = self.get_sensor()
+            if not selected_sensor:
+                return
+            try:
+                self.add_graph_sensor(self.Data_queue_visuals, selected_sensor)
+            except:
+                print("connect to sensors ?")
+            buttons_enabler()
+        Button6.clicked.connect(show_graph_plot)
+
+        def hide_visuals():
+            try:
+                self.remove_heat_map()
+            except:
+                pass
+            try:
+                self.remove_graph()
+            except:
+                pass
+        Button5.clicked.connect(hide_visuals)
 
     def createBottomRightGroupBox(self):
         self.bottomRightGroupBox = QGroupBox("Data")
+
+        Button1 = QPushButton("Start Logging")
+        Button1.setStyleSheet("background-color: none; "
+                                   # "height: 100px; "
+                                   # "width: 200px; "
+                                   )
+        Button2 = QPushButton("Stop Logging")
+        Button2.setStyleSheet("background-color: none; "
+                                   # "height: 100px; "
+                                   # "width: 200px; "
+                                   )
+
+        Button1.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        Button2.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
         text = QLabel(
             "<center>" \
@@ -930,12 +934,76 @@ class GuiMainWindow(QWidget):
             "</center>")
 
         layout = QVBoxLayout()
+        layout.addWidget(Button1)
+        layout.addWidget(Button2)
         layout.addWidget(text)
         #layout.addStretch(1)
         self.bottomRightGroupBox.setLayout(layout)
 
-    def connection_killer(self):
+        Button1.setEnabled(True)
+        Button2.setEnabled(True)
 
+        # Logging push button setup
+        def create_logging():  # create and start usb serial connection
+            try:
+                self.add_logging()
+                print("adding logging")
+            except:
+                print("not addded logging")
+
+        def delete_logging():
+            try:
+                self.remove_logging()
+            except:
+                print("did not remove logging")
+
+        Button2.clicked.connect(delete_logging)
+        Button1.clicked.connect(create_logging)
+
+    # USB connection adder
+    def add_usb_connection(self):  # create and start usb serial connection
+        self.Data_queue_visuals = aioprocessing.AioQueue()  # added every time as joining closes the queue
+        self.Data_queue_logging = aioprocessing.AioQueue()  # added every time as joining closes the queue
+        if self.usb_connection.start_usb_process(self.Data_queue_visuals, self.Data_queue_logging):
+            print("added USB Connection")
+            # self.add_heat_map_sensors(self.Data_queue_visuals)
+            return True
+        else:
+            return False
+
+    # Simulation connection adder
+    def add_sim_connection(self):  # create and start usb serial connection
+        self.Data_queue_visuals = aioprocessing.AioQueue()  # added every time as joining closes the queue
+        self.Data_queue_logging = aioprocessing.AioQueue()  # added every time as joining closes the queue
+        if self.sim_connection.start_sim_process(self.Data_queue_visuals, self.Data_queue_logging):
+            print("added Simulation Connection")
+            # self.add_heat_map_sensors(self.Data_queue_visuals)
+            return True
+        else:
+            return False
+
+    # logging is only possible if sensors are connected
+    def add_logging(self):
+        if self.spreadsheet_logging.start_logging_process(self.Data_queue_logging):
+            print("added logging")
+            return True
+        else:
+            return False
+
+    def remove_logging(self):
+        self.spreadsheet_logging.end_logging_process()
+        print("ended logging")
+
+    # ends all possible connections
+    def connection_killer(self):
+        # visuals removed before closing connections
+        try: self.remove_heat_map()
+        except: pass
+        try: self.remove_graph()
+        except: pass
+        if self.spreadsheet_logging.in_logging_process_event.is_set():
+            self.spreadsheet_logging.end_logging_process()
+            print("killed logging")
         if self.ble_connection.in_BLE_process_event.is_set():
             self.ble_connection.end_ble_process()
             print("killed ble")
@@ -945,16 +1013,27 @@ class GuiMainWindow(QWidget):
         if self.bt_connection.in_BT_process_event.is_set():
             self.bt_connection.end_bt_process()
             print("killed bt")
+        if self.sim_connection.in_Sim_process_event.is_set():
+            self.sim_connection.end_sim_process()
+            print("killed sim")
 
-    # for centering the window on screen
+    # for centering a window on screen
     def center(self):
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+    # get sensor selection from user
+    def get_sensor(self):
+        i, okPressed = QInputDialog.getInt(self, "Sensor Selection", "Input Sensor Position: 0 <= X <= 30             "
+                                                                     "                 ", 0, 0, 30, 1)
+        if okPressed:
+            print(i)
+            return i
 
-# Main method runs the GUI and some other processes following button clicks
+
+# Main method runs the GUI
 if __name__ == '__main__':
     import sys
 
