@@ -48,7 +48,8 @@ class LogToSpreadsheet:
 
         while not self.logging_stop_event.is_set():
             # TODO add code for logging to spreadsheet
-            print("logging")
+            array_to_log = self.Data_queue_logging.get_nowait()
+            print("Logging:", array_to_log)
             time.sleep(1)
             ...
 
