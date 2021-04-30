@@ -48,7 +48,7 @@ class LogToSpreadsheet:
 
     def logging_process(self,csv_path):
 
-        csv_file = open(csv_path[0], 'w')
+        csv_file = open(csv_path, 'w', newline='')
         if not csv_file.writable():
             print("Error : CSV file is not writable")
             return False  # TODO : message d'erreur propre pour l'utilisateur
@@ -1037,9 +1037,12 @@ class GuiMainWindow(QWidget):
     # logging is only possible if sensors are connected
     def add_logging(self):
         # Ask for CSV file to log
-        csv_path = QFileDialog.getSaveFileName(self, 'Save CSV', os.getenv('HOME'), 'CSV (*.csv)')
+        csv_path = QFileDialog.getSaveFileName(self, 'Save CSV', os.getenv('HOME'), 'CSV (*.csv)', 'CSV (*.csv)', QFileDialog.DontUseNativeDialog)
         if csv_path[0] == '':
             return False # Cancel
+        csv_path = csv_path[0]
+        if not csv_path.lower().endswith(".csv"): # force CSV extension
+            csv_path += ".csv"
 
         if self.spreadsheet_logging.start_logging_process(self.Data_queue_logging,csv_path):
             print("added logging")

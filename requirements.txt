@@ -1,8 +1,8 @@
-matplotlib==3.2.1
-aioprocessing==1.0.1
-numpy==1.18.3
-bleak==0.6.1
-vispy==0.6.4
-pyqtgraph==0.10.0
-PyQt5==5.15.4
-pyserial==3.5
+matplotlib
+aioprocessing
+numpy
+bleak
+vispy
+pyqtgraph
+PyQt5
+pyserial
