@@ -51,7 +51,7 @@ class LogToSpreadsheet:
         csv_file = open(csv_path, 'w', newline='')
         if not csv_file.writable():
             print("Error : CSV file is not writable")
-            return False  # TODO : message d'erreur propre pour l'utilisateur
+            return False  # TODO : message d'erreur pour dire a l'utilisateur qu'il y a un soucis d'ecriture
         csv_writer = csv.writer(csv_file, dialect='excel')
 
         labels = ["Sensor "+str(i) for i in range(1,33)]   # TODO : nom des colonnes automatique ; ici, 32 capteurs
@@ -61,7 +61,7 @@ class LogToSpreadsheet:
 
         while not self.logging_stop_event.is_set():
             array_to_log = self.Data_queue_logging.get()
-            # print("Logging:", array_to_log) # ne pas activer, pauvres fous !
+            # print("Logging:", array_to_log) # Ne surtout pas activer
             if array_to_log is not None :
                 # array_to_log est une matrice 8x4
 
@@ -71,10 +71,10 @@ class LogToSpreadsheet:
                     table += list(L)
 
                 T = [ int(4095*x) for x in table ] # TODO : fonction de traitement des données ;
-                # ici c'est pour passer de [0;1] à [[0;4095]] , à adapter selon le range de l'ADC
+                # ici c'est pour passer de [0;1] à [[0;4095]] , à adapter selon le nombre de bit de l'ADC
 
                 csv_writer.writerow(T) # enregistre dans le CSV la ligne
-                csv_file.flush() # écrit dans le fichier immédiatement
+                csv_file.flush() # écrit dans le fichier immédiatement (évite de garder les données en cache)
 
         self.in_logging_process_event.clear()
 
@@ -126,17 +126,17 @@ class ConnectionSimulation:
         while not self.Sim_disconnect_event.is_set():
 
             # Gestion du temps
-            fps = 60  # 'fps' data entry generated per second (x32 sensors)
+            fps = 60  # Nombre de MAP des 32 capteurs par secondes
             dt = 1 / fps
-            time.sleep(dt) # Pour éviter de générer 23'000 mesures par seconde
+            time.sleep(dt) # Pour éviter de générer 12'000 mesures par seconde
             t += dt
 
             #matrix_values = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
             #matrix_values = matrix_values.clip(min=0)
             #matrix_values = np.rot90(matrix_values, 2)
 
-            x=3 # multiplicateur de vitesse
-            matrix_values = (1+np.cos(t*M*x))/2 # Fréquences aléatoires --> cohérence temporelle (demander à Paul)
+            x=3 # multiplicateur de vitesse de l'animation HEAT MAP
+            matrix_values = (1+np.cos(t*M*x))/2 # Variation progressive des valeurs de chacun des capteurs
 
             if self.Data_queue_visuals.empty():
                 self.Data_queue_visuals.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
@@ -637,7 +637,7 @@ class GuiMainWindow(QWidget):
         self.mainLayout.addWidget(self.topRightGroupBox, 0, 2, 1, 1)
         self.mainLayout.addWidget(self.bottomRightGroupBox, 1, 2, 1, 1)  # row, col, vertical stretch, horizontal stretch
 
-        # Tailles minimales ; Ne pas activer. (Pensez aux écrans 720p !)
+        # Ne pas activer les tailles minimales sinon inutilisable sur les écrans 720p
         #self.mainLayout.setColumnMinimumWidth(2, 400)  # col, stretch
         #self.mainLayout.setColumnMinimumWidth(1, 600)  # col, stretch
         #self.mainLayout.setColumnMinimumWidth(0, 400)
@@ -661,7 +661,7 @@ class GuiMainWindow(QWidget):
             QtCore.Qt.CustomizeWindowHint |
             QtCore.Qt.WindowTitleHint |
             QtCore.Qt.WindowCloseButtonHint
-            #  QtCore.Qt.WindowStaysOnTopHint # SURTOUT PAS ! Rend inutilisable la fenêtre de sauvegarde
+            #  QtCore.Qt.WindowStaysOnTopHint # Ne surtout pas activer, pas du tout ergonomique
         )
 
         # Adding Maximise and Minimise buttons to window
