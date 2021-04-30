@@ -1,10 +1,13 @@
+import csv
+import os
+
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtCore import QDateTime, Qt, QTimer, pyqtSignal, QRunnable, QThreadPool, QObject, pyqtSlot
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
                              QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                              QProgressBar, QPushButton, QRadioButton, QScrollBar, QSizePolicy,
                              QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
-                             QVBoxLayout, QWidget, QDesktopWidget, QMainWindow, QInputDialog)
+                             QVBoxLayout, QWidget, QDesktopWidget, QMainWindow, QInputDialog, QFileDialog)
 import asyncio
 import multiprocessing
 import aioprocessing
@@ -21,16 +24,15 @@ import json
 import pyqtgraph as pg
 import time
 
-
 class LogToSpreadsheet:
     def __init__(self):
         self.logging_stop_event = aioprocessing.AioEvent()
         self.in_logging_process_event = aioprocessing.AioEvent()
 
-    def start_logging_process(self, data_queue_logging):
+    def start_logging_process(self, data_queue_logging, csv_path):
         self.Data_queue_logging = data_queue_logging
         self.logging_stop_event.clear()
-        self.process2 = aioprocessing.AioProcess(target=self.logging_process, args=())
+        self.process2 = aioprocessing.AioProcess(target=self.logging_process, args=(csv_path,))
         self.process2.start()
         self.process2.join(1)  # if timeout is passed then connection established
         if not self.process2.is_alive():
@@ -43,15 +45,36 @@ class LogToSpreadsheet:
             print("process2 started")
             return True
 
-    def logging_process(self):
+
+    def logging_process(self,csv_path):
+
+        csv_file = open(csv_path[0], 'w')
+        if not csv_file.writable():
+            print("Error : CSV file is not writable")
+            return False  # TODO : message d'erreur propre pour l'utilisateur
+        csv_writer = csv.writer(csv_file, dialect='excel')
+
+        labels = ["Sensor "+str(i) for i in range(1,33)]   # TODO : nom des colonnes automatique ; ici, 32 capteurs
+        csv_writer.writerow(labels)
+
         self.in_logging_process_event.set()
 
         while not self.logging_stop_event.is_set():
-            # TODO add code for logging to spreadsheet
-            array_to_log = self.Data_queue_logging.get_nowait()
-            print("Logging:", array_to_log)
-            time.sleep(1)
-            ...
+            array_to_log = self.Data_queue_logging.get()
+            # print("Logging:", array_to_log) # ne pas activer, pauvres fous !
+            if array_to_log is not None :
+                # array_to_log est une matrice 8x4
+
+                # On met les valeurs sur une seule ligne
+                table=[]
+                for L in array_to_log:
+                    table += list(L)
+
+                T = [ int(4095*x) for x in table ] # TODO : fonction de traitement des données ;
+                # ici c'est pour passer de [0;1] à [[0;4095]] , à adapter selon le range de l'ADC
+
+                csv_writer.writerow(T) # enregistre dans le CSV la ligne
+                csv_file.flush() # écrit dans le fichier immédiatement
 
         self.in_logging_process_event.clear()
 
@@ -67,7 +90,6 @@ class LogToSpreadsheet:
         print("process2 ended")
         print("process2 ended \n", "Children processes still active:", multiprocessing.active_children())
         return True
-
 
 # Class for simulating sensor matrix values
 class ConnectionSimulation:
@@ -96,16 +118,32 @@ class ConnectionSimulation:
     def sim_process(self):
         self.in_Sim_process_event.set()
 
+        # Fréquences aléatoires
+        M = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
+        M = M.clip(min=0)
+        M = np.rot90(M, 2)
+        t = float(0)
         while not self.Sim_disconnect_event.is_set():
 
-            matrix_values = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
-            matrix_values = matrix_values.clip(min=0)
-            matrix_values = np.rot90(matrix_values, 2)
+            # Gestion du temps
+            fps = 60  # 'fps' data entry generated per second (x32 sensors)
+            dt = 1 / fps
+            time.sleep(dt) # Pour éviter de générer 23'000 mesures par seconde
+            t += dt
+
+            #matrix_values = np.random.uniform(0, 1, (8, 4)).astype(np.float32)
+            #matrix_values = matrix_values.clip(min=0)
+            #matrix_values = np.rot90(matrix_values, 2)
+
+            x=3 # multiplicateur de vitesse
+            matrix_values = (1+np.cos(t*M*x))/2 # Fréquences aléatoires --> cohérence temporelle (demander à Paul)
 
             if self.Data_queue_visuals.empty():
                 self.Data_queue_visuals.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
             if self.Data_queue_logging.empty():
                 self.Data_queue_logging.put(matrix_values)  # wait for most recent value 4,2 0r 3,2 4,2 was used
+
+
 
         # emptying data queues
         while not self.Data_queue_visuals.empty():
@@ -599,11 +637,11 @@ class GuiMainWindow(QWidget):
         self.mainLayout.addWidget(self.topRightGroupBox, 0, 2, 1, 1)
         self.mainLayout.addWidget(self.bottomRightGroupBox, 1, 2, 1, 1)  # row, col, vertical stretch, horizontal stretch
 
-        self.mainLayout.setColumnMinimumWidth(2, 400)  # col, stretch
-        self.mainLayout.setColumnMinimumWidth(1, 600)  # col, stretch
-        self.mainLayout.setColumnMinimumWidth(0, 400)
-
-        self.mainLayout.setRowMinimumHeight(1, 1000)
+        # Tailles minimales ; Ne pas activer. (Pensez aux écrans 720p !)
+        #self.mainLayout.setColumnMinimumWidth(2, 400)  # col, stretch
+        #self.mainLayout.setColumnMinimumWidth(1, 600)  # col, stretch
+        #self.mainLayout.setColumnMinimumWidth(0, 400)
+        #self.mainLayout.setRowMinimumHeight(1, 1000)
 
         self.mainLayout.setColumnStretch(0, 3)  # col, stretch
         self.mainLayout.setColumnStretch(2, 3)
@@ -622,8 +660,8 @@ class GuiMainWindow(QWidget):
             QtCore.Qt.Window |
             QtCore.Qt.CustomizeWindowHint |
             QtCore.Qt.WindowTitleHint |
-            QtCore.Qt.WindowCloseButtonHint |
-            QtCore.Qt.WindowStaysOnTopHint
+            QtCore.Qt.WindowCloseButtonHint
+            #  QtCore.Qt.WindowStaysOnTopHint # SURTOUT PAS ! Rend inutilisable la fenêtre de sauvegarde
         )
 
         # Adding Maximise and Minimise buttons to window
@@ -699,14 +737,15 @@ class GuiMainWindow(QWidget):
                                 )
         Button2 = QPushButton("Connect to Sensors")
         Button2.setStyleSheet("background-color: none; "
-                                #"height: 100px; "
-                                #"width: 200px; "
-                                )
-        Button3 = QPushButton("Disconnect from Sensors")
+                              # "height: 100px; "
+                              # "width: 200px; "
+                              )
+
+        Button3 = QPushButton("Connect to Sensors")
         Button3.setStyleSheet("background-color: none; "
-                                   #"height: 100px; "
-                                   #"width: 200px; "
-                                   )
+                              # "height: 100px; "
+                              # "width: 200px; "
+                              )
         Button4 = QPushButton("Simulate Connection to sensors")
         Button4.setStyleSheet("background-color: none; "
                                    #"height: 100px; "
@@ -916,6 +955,9 @@ class GuiMainWindow(QWidget):
                 pass
         Button5.clicked.connect(hide_visuals)
 
+
+
+
     def createBottomRightGroupBox(self):
         self.bottomRightGroupBox = QGroupBox("Data")
 
@@ -926,17 +968,16 @@ class GuiMainWindow(QWidget):
                                    )
         Button2 = QPushButton("Stop Logging")
         Button2.setStyleSheet("background-color: none; "
-                                   # "height: 100px; "
-                                   # "width: 200px; "
-                                   )
+                              # "height: 100px; "
+                              # "width: 200px; "
+                              )
+
 
         Button1.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         Button2.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
         text = QLabel(
             "<center>" \
-            "<img src=../images/hyve_icon_180.png>" \
-            "<br/>" \
             "<img src=../images/hyve_icon_180.png>" \
             "<br/>" \
             "<img src=../images/hyve_icon_180.png>" \
@@ -957,8 +998,8 @@ class GuiMainWindow(QWidget):
             try:
                 self.add_logging()
                 print("adding logging")
-            except:
-                print("not addded logging")
+            except Exception as ex:
+                print("not addded logging : ", ex) # Affiche l'erreur
 
         def delete_logging():
             try:
@@ -968,6 +1009,8 @@ class GuiMainWindow(QWidget):
 
         Button2.clicked.connect(delete_logging)
         Button1.clicked.connect(create_logging)
+
+
 
     # USB connection adder
     def add_usb_connection(self):  # create and start usb serial connection
@@ -993,7 +1036,12 @@ class GuiMainWindow(QWidget):
 
     # logging is only possible if sensors are connected
     def add_logging(self):
-        if self.spreadsheet_logging.start_logging_process(self.Data_queue_logging):
+        # Ask for CSV file to log
+        csv_path = QFileDialog.getSaveFileName(self, 'Save CSV', os.getenv('HOME'), 'CSV (*.csv)')
+        if csv_path[0] == '':
+            return False # Cancel
+
+        if self.spreadsheet_logging.start_logging_process(self.Data_queue_logging,csv_path):
             print("added logging")
             return True
         else:
@@ -1042,7 +1090,10 @@ class GuiMainWindow(QWidget):
             return i
 
 
+
+
 # Main method runs the GUI
+
 if __name__ == '__main__':
     import sys
 
