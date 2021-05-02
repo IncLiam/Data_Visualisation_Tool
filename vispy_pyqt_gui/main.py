@@ -24,6 +24,7 @@ import json
 import pyqtgraph as pg
 import time
 
+
 class LogToSpreadsheet:
     def __init__(self):
         self.logging_stop_event = aioprocessing.AioEvent()
@@ -44,7 +45,6 @@ class LogToSpreadsheet:
         else:
             print("process2 started")
             return True
-
 
     def logging_process(self,csv_path):
 
@@ -90,6 +90,7 @@ class LogToSpreadsheet:
         print("process2 ended")
         print("process2 ended \n", "Children processes still active:", multiprocessing.active_children())
         return True
+
 
 # Class for simulating sensor matrix values
 class ConnectionSimulation:
@@ -741,7 +742,7 @@ class GuiMainWindow(QWidget):
                               # "width: 200px; "
                               )
 
-        Button3 = QPushButton("Connect to Sensors")
+        Button3 = QPushButton("Disconnect from Sensors")
         Button3.setStyleSheet("background-color: none; "
                               # "height: 100px; "
                               # "width: 200px; "
@@ -955,9 +956,6 @@ class GuiMainWindow(QWidget):
                 pass
         Button5.clicked.connect(hide_visuals)
 
-
-
-
     def createBottomRightGroupBox(self):
         self.bottomRightGroupBox = QGroupBox("Data")
 
@@ -1009,8 +1007,6 @@ class GuiMainWindow(QWidget):
 
         Button2.clicked.connect(delete_logging)
         Button1.clicked.connect(create_logging)
-
-
 
     # USB connection adder
     def add_usb_connection(self):  # create and start usb serial connection
@@ -1093,10 +1089,7 @@ class GuiMainWindow(QWidget):
             return i
 
 
-
-
 # Main method runs the GUI
-
 if __name__ == '__main__':
     import sys
 
