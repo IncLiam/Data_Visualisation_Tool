@@ -1,12 +1,11 @@
-import aioprocessing
-from matplotlib.pyplot import cm
+from aioprocessing import AioEvent
+from matplotlib import cm
 import numpy as np
 from vispy.util.transforms import ortho
 import vispy.app
 from vispy import color
 from vispy import gloo
 import pyqtgraph as pg
-import time
 
 
 # Class for Pyqtgraph plot for single sensor output
@@ -18,7 +17,7 @@ class PyqtgraphPlotSensor:
         self.Data_queue = args[0]
         self.selected_sensor = args[1]
         self.new_data = 0.
-        self.in_graph_event = aioprocessing.AioEvent()
+        self.in_graph_event = AioEvent()
 
         self.graphWidget = pg.GraphicsLayoutWidget()
         self.graphWidget.setBackground('w')
@@ -43,7 +42,7 @@ class PyqtgraphPlotSensor:
         self.data1[-1] = self.new_data
         self.curve1.setData(self.data1)
 
-    # update all plots
+    # update plots
     def update(self):
         if not self.Data_queue.empty():
             self.q_data = self.Data_queue.get_nowait()
@@ -58,7 +57,7 @@ class PyqtgraphPlotSensor:
 class CanvasSensors(vispy.app.Canvas):
 
     def __init__(self, *args):
-        self.in_heatmap_event = aioprocessing.AioEvent()
+        self.in_heatmap_event = AioEvent()
 
         # Image to be displayed
         self.W, self.H = 8, 4

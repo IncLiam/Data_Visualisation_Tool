@@ -4,9 +4,13 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QGroupBox, QLabel, QPushButton, QSizePolicy, QStyleFactory,
                              QVBoxLayout, QWidget, QDesktopWidget, QInputDialog, QFileDialog)
+from aioprocessing import AioQueue
 from Visuals import *
 from Connections import *
 from SpreadsheetLogging import *
+
+from multiprocessing import freeze_support
+freeze_support()
 
 
 # Class containing GUI setup and basic functions
@@ -186,7 +190,7 @@ class GuiMainWindow(QWidget):
         # BT push buttons setup
         def create_bt_connection():  # create and start the BLE connection
             buttons_disabler()
-            self.Data_queue1 = aioprocessing.AioQueue()  # added every time as joining closes the queue
+            self.Data_queue1 = AioQueue()  # added every time as joining closes the queue
 
             if self.bt_connection.start_bt_process(self.Data_queue1):
                 # show graph1 plot, non sim,  with queue
@@ -212,7 +216,7 @@ class GuiMainWindow(QWidget):
         # BLE push buttons setup
         def create_ble_connection():  # create and start the BLE connection
             buttons_disabler()
-            self.Data_queue = aioprocessing.AioQueue()  # added every time as joining closes thr queue
+            self.Data_queue = AioQueue()  # added every time as joining closes thr queue
             if self.ble_connection.start_ble_process(self.Data_queue):
                 buttons_disabler()
             else:
@@ -261,7 +265,7 @@ class GuiMainWindow(QWidget):
 
         text = QLabel(
             "<center>" \
-            "<img src=../images/hyve_1080w.png/>" \
+            "<img src=images/hyve_1080w.png/>" \
             "<p>Data Visualisation Tool<br/>" \
             "Version 1.0<br/>" \
             "Copyright &copy; Hyve Dynamics Ltd.</p>" \
@@ -370,9 +374,9 @@ class GuiMainWindow(QWidget):
 
         text = QLabel(
             "<center>" \
-            "<img src=../images/hyve_icon_180.png>" \
+            "<img src=images/hyve_icon_180.png>" \
             "<br/>" \
-            "<img src=../images/hyve_icon_180.png>" \
+            "<img src=images/hyve_icon_180.png>" \
             "</center>")
 
         layout = QVBoxLayout()
@@ -404,8 +408,8 @@ class GuiMainWindow(QWidget):
 
     # USB connection adder
     def add_usb_connection(self):  # create and start usb serial connection
-        self.Data_queue_visuals = aioprocessing.AioQueue()  # added every time as joining closes the queue
-        self.Data_queue_logging = aioprocessing.AioQueue()  # added every time as joining closes the queue
+        self.Data_queue_visuals = AioQueue()  # added every time as joining closes the queue
+        self.Data_queue_logging = AioQueue()  # added every time as joining closes the queue
         if self.usb_connection.start_usb_process(self.Data_queue_visuals, self.Data_queue_logging):
             print("added USB Connection")
             # self.add_heat_map_sensors(self.Data_queue_visuals)
@@ -415,8 +419,8 @@ class GuiMainWindow(QWidget):
 
     # Simulation connection adder
     def add_sim_connection(self):  # create and start usb serial connection
-        self.Data_queue_visuals = aioprocessing.AioQueue()  # added every time as joining closes the queue
-        self.Data_queue_logging = aioprocessing.AioQueue()  # added every time as joining closes the queue
+        self.Data_queue_visuals = AioQueue()  # added every time as joining closes the queue
+        self.Data_queue_logging = AioQueue()  # added every time as joining closes the queue
         if self.sim_connection.start_sim_process(self.Data_queue_visuals, self.Data_queue_logging):
             print("added Simulation Connection")
             # self.add_heat_map_sensors(self.Data_queue_visuals)

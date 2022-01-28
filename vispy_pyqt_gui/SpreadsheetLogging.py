@@ -1,17 +1,18 @@
 import csv
 import multiprocessing
-import aioprocessing
+from aioprocessing import AioEvent
+from aioprocessing import AioProcess
 
 
 class LogToSpreadsheet:
     def __init__(self):
-        self.logging_stop_event = aioprocessing.AioEvent()
-        self.in_logging_process_event = aioprocessing.AioEvent()
+        self.logging_stop_event = AioEvent()
+        self.in_logging_process_event = AioEvent()
 
     def start_logging_process(self, data_queue_logging, csv_path):
         self.Data_queue_logging = data_queue_logging
         self.logging_stop_event.clear()
-        self.process2 = aioprocessing.AioProcess(target=self.logging_process, args=(csv_path,))
+        self.process2 = AioProcess(target=self.logging_process, args=(csv_path,))
         self.process2.start()
         self.process2.join(1)  # if timeout is passed then connection established
         if not self.process2.is_alive():
@@ -24,7 +25,7 @@ class LogToSpreadsheet:
             print("process2 started")
             return True
 
-    def logging_process(self,csv_path):
+    def logging_process(self, csv_path):
 
         csv_file = open(csv_path, 'w', newline='')
         if not csv_file.writable():

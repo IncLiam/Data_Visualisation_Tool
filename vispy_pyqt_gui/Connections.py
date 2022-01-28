@@ -1,5 +1,6 @@
 import multiprocessing
-import aioprocessing
+from aioprocessing import AioEvent
+from aioprocessing import AioProcess
 from bleak import BleakClient
 import logging
 import numpy as np
@@ -12,14 +13,14 @@ import asyncio
 # Class containing all objects and methods for Bluetooth Serial stack connection and disconnection
 class BTConnection:
     def __init__(self):
-        self.bt_disconnect_event = aioprocessing.AioEvent()
-        self.in_BT_process_event = aioprocessing.AioEvent()
+        self.bt_disconnect_event = AioEvent()
+        self.in_BT_process_event = AioEvent()
 
     def start_bt_process(self, data_queue1):
         self.Data_queue1 = data_queue1
 
         self.bt_disconnect_event.clear()
-        self.process1 = aioprocessing.AioProcess(target=self.bt_process, args=())
+        self.process1 = AioProcess(target=self.bt_process, args=())
         self.process1.start()
         self.process1.join(1)  # if timeout is passed then connection established
         if not self.process1.is_alive():
@@ -72,9 +73,9 @@ class BTConnection:
 # Class containing all objects and methods for BLE stack connection and disconnection
 class BLEConnection:
     def __init__(self):
-        self.BLE_disconnect_event = aioprocessing.AioEvent()
-        self.BLE_connection_event = aioprocessing.AioEvent()
-        self.in_BLE_process_event = aioprocessing.AioEvent()
+        self.BLE_disconnect_event = AioEvent()
+        self.BLE_connection_event = AioEvent()
+        self.in_BLE_process_event = AioEvent()
 
         self.address = "E2:B1:5D:0F:DC:5B"                                              # Arduino Device UUID
         self.char_uuid = "140984b8-72ba-494d-8707-80e9af77523a"                         # Arduino Characteristic UUID
@@ -83,7 +84,7 @@ class BLEConnection:
         self.Data_queue = data_queue
         self.BLE_connection_event.clear()
         self.BLE_disconnect_event.clear()
-        self.process1 = aioprocessing.AioProcess(target=self.ble_process, args=())
+        self.process1 = AioProcess(target=self.ble_process, args=())
         self.process1.start()
         self.process1.join(5)  # if timeout is passed then connection established
         if not self.process1.is_alive():
@@ -155,14 +156,14 @@ class BLEConnection:
 # Class containing all objects and methods for USB Serial stack connection and disconnection
 class USBConnection:
     def __init__(self):
-        self.USB_disconnect_event = aioprocessing.AioEvent()
-        self.in_USB_process_event = aioprocessing.AioEvent()
+        self.USB_disconnect_event = AioEvent()
+        self.in_USB_process_event = AioEvent()
 
     def start_usb_process(self, data_queue_visuals, data_queue_logging):
         self.Data_queue_visuals = data_queue_visuals
         self.Data_queue_logging = data_queue_logging
         self.USB_disconnect_event.clear()
-        self.process1 = aioprocessing.AioProcess(target=self.usb_process, args=())
+        self.process1 = AioProcess(target=self.usb_process, args=())
         self.process1.start()
         self.process1.join(5)  # if timeout is passed then connection established
         if not self.process1.is_alive():
@@ -300,14 +301,14 @@ class USBConnection:
 # Class for simulating sensor matrix values
 class ConnectionSimulation:
     def __init__(self):
-        self.Sim_disconnect_event = aioprocessing.AioEvent()
-        self.in_Sim_process_event = aioprocessing.AioEvent()
+        self.Sim_disconnect_event = AioEvent()
+        self.in_Sim_process_event = AioEvent()
 
     def start_sim_process(self, data_queue_visuals, data_queue_logging):
         self.Data_queue_visuals = data_queue_visuals
         self.Data_queue_logging = data_queue_logging
         self.Sim_disconnect_event.clear()
-        self.process1 = aioprocessing.AioProcess(target=self.sim_process, args=())
+        self.process1 = AioProcess(target=self.sim_process, args=())
         self.process1.start()
         self.process1.join(1)  # if timeout is passed then connection established
         if not self.process1.is_alive():
