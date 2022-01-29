@@ -40,17 +40,17 @@ class GuiMainWindow(QWidget):
         # row, col, vertical stretch, horizontal stretch
 
         # Ne pas activer les tailles minimales sinon inutilisable sur les écrans 720p
-        # self.mainLayout.setColumnMinimumWidth(2, 400)  # col, stretch
+        self.mainLayout.setColumnMinimumWidth(2, 300)  # col, stretch
         # self.mainLayout.setColumnMinimumWidth(1, 600)  # col, stretch
-        # self.mainLayout.setColumnMinimumWidth(0, 400)
+        self.mainLayout.setColumnMinimumWidth(0, 300)
         # self.mainLayout.setRowMinimumHeight(1, 1000)
 
-        self.mainLayout.setColumnStretch(0, 3)  # col, stretch
-        self.mainLayout.setColumnStretch(2, 3)
-        self.mainLayout.setColumnStretch(1, 4)
+        self.mainLayout.setColumnStretch(0, 1)  # col, stretch
+        self.mainLayout.setColumnStretch(2, 1)
+        self.mainLayout.setColumnStretch(1, 1)
 
-        self.mainLayout.setRowStretch(1, 8)  # row, stretch
-        self.mainLayout.setRowStretch(0, 2)
+        # self.mainLayout.setRowStretch(1, 8)  # row, stretch
+        # self.mainLayout.setRowStretch(0, 2)
 
         self.setLayout(self.mainLayout)
 
@@ -137,18 +137,18 @@ class GuiMainWindow(QWidget):
                                 #"height: 100px; "
                                 #"width: 200px; "
                                 )
-        Button2 = QPushButton("Connect to Sensors")
+        Button2 = QPushButton("Connect")
         Button2.setStyleSheet("background-color: none; "
                               # "height: 100px; "
                               # "width: 200px; "
                               )
 
-        Button3 = QPushButton("Disconnect from Sensors")
+        Button3 = QPushButton("Disconnect")
         Button3.setStyleSheet("background-color: none; "
                               # "height: 100px; "
                               # "width: 200px; "
                               )
-        Button4 = QPushButton("Simulate Connection to sensors")
+        Button4 = QPushButton("Simulate")
         Button4.setStyleSheet("background-color: none; "
                                    #"height: 100px; "
                                    #"width: 200px; "
@@ -279,7 +279,7 @@ class GuiMainWindow(QWidget):
     def create_top_right_group_box(self):
         self.topRightGroupBox = QGroupBox("Visuals")
 
-        Button4 = QPushButton("Show Heat Map")
+        Button4 = QPushButton("Heat Map")
         Button4.setStyleSheet("background-color: none; "
                                    # "height: 100px; "
                                    # "width: 200px; "
@@ -289,7 +289,7 @@ class GuiMainWindow(QWidget):
                                    # "height: 100px; "
                                    # "width: 200px; "
                                    )
-        Button6 = QPushButton("Show Graph Plot")
+        Button6 = QPushButton("Graph Plot")
         Button6.setStyleSheet("background-color: none; "
                                    # "height: 100px; "
                                    # "width: 200px; "

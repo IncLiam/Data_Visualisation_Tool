@@ -6,3 +6,4 @@ vispy
 pyqtgraph
 PyQt5
 pyserial
+cx_Freeze
