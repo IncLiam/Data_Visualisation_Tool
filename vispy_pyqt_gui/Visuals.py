@@ -28,8 +28,8 @@ class PyqtgraphPlotSensor:
         # single pressure
         self.data1 = np.random.uniform(0, 0, size=100)
         self.curve1 = self.p1.plot(self.data1, pen=pen)
-        self.p1.setYRange(0, 0.8, padding=0)
-        self.p1.setTitle("Single Pressure Sensor Airflow Detection")
+        self.p1.setYRange(0, 1, padding=0)
+        self.p1.setTitle("Single Pressure Sensor Output")
         self.p1.hideAxis('bottom')
         self.p1.hideAxis('left')
 
@@ -112,7 +112,9 @@ class CanvasSensors(vispy.app.Canvas):
             self.Data_queue = args[0]
 
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
-        self.texture = gloo.Texture2D(colors, interpolation='linear', format='rgba')
+        self.texture = gloo.Texture2D(colors,
+                                      # interpolation='linear',
+                                      format='rgba')
 
         self.program['u_texture'] = self.texture
         self.program.bind(gloo.VertexBuffer(self.data))

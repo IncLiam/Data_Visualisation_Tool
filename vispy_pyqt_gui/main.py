@@ -1,6 +1,6 @@
 import sys
 import os
-from PyQt5 import QtCore
+from PyQt5 import QtGui
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QApplication, QGridLayout, QGroupBox, QLabel, QPushButton, QSizePolicy, QStyleFactory,
                              QVBoxLayout, QWidget, QDesktopWidget, QInputDialog, QFileDialog)
@@ -39,18 +39,18 @@ class GuiMainWindow(QWidget):
         self.mainLayout.addWidget(self.bottomRightGroupBox, 1, 2, 1, 1)
         # row, col, vertical stretch, horizontal stretch
 
-        # Ne pas activer les tailles minimales sinon inutilisable sur les écrans 720p
+        # attention les tailles minimales sinon inutilisable sur les écrans 720p
         self.mainLayout.setColumnMinimumWidth(2, 300)  # col, stretch
         # self.mainLayout.setColumnMinimumWidth(1, 600)  # col, stretch
         self.mainLayout.setColumnMinimumWidth(0, 300)
-        # self.mainLayout.setRowMinimumHeight(1, 1000)
+        self.mainLayout.setRowMinimumHeight(1, 750)
 
         self.mainLayout.setColumnStretch(0, 1)  # col, stretch
         self.mainLayout.setColumnStretch(2, 1)
-        self.mainLayout.setColumnStretch(1, 1)
+        self.mainLayout.setColumnStretch(1, 2)
 
-        # self.mainLayout.setRowStretch(1, 8)  # row, stretch
-        # self.mainLayout.setRowStretch(0, 2)
+        self.mainLayout.setRowStretch(1, 8)  # row, stretch
+        self.mainLayout.setRowStretch(0, 2)
 
         self.setLayout(self.mainLayout)
 
@@ -59,12 +59,14 @@ class GuiMainWindow(QWidget):
 
         # Removing help "?" button
         self.setWindowFlags(
-            QtCore.Qt.Window |
-            QtCore.Qt.CustomizeWindowHint |
-            QtCore.Qt.WindowTitleHint |
-            QtCore.Qt.WindowCloseButtonHint
+            Qt.Window |
+            Qt.CustomizeWindowHint |
+            Qt.WindowTitleHint |
+            Qt.WindowCloseButtonHint
             # QtCore.Qt.WindowStaysOnTopHint # Ne surtout pas activer, pas du tout ergonomique
         )
+
+        self.setWindowIcon(QtGui.QIcon('images/hyve_icon.ico'))
 
         # Adding Maximise and Minimise buttons to window
         self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
