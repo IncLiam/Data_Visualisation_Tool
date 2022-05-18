@@ -1,5 +1,3 @@
-<img src="" align="right" width="140" />
-
 # Serial Data Visualisation Tool
 [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
 [![Last Commit](https://img.shields.io/badge/last%20commit-may%202022-orange)]()
