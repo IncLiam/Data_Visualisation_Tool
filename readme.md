@@ -34,3 +34,4 @@ charts on minute intervals over months and years.
 | Language     | GUI Framework | Data Visualisation   |
 |--------------|---------------|----------------------|
 | Python 3.7.6 | Pyqt5         | Vispy <br/>Pyqtgraph |
+
