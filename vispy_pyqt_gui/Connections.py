@@ -106,7 +106,7 @@ class BLEConnection:
                 """Simple notification handler which prints the data received."""
                 if self.Data_queue.empty():
                     self.Data_queue.put(data)  # wait for most recent value
-                    #print("Pressure Sensor Values: ", list(data))
+                    #print("Sensor Values: ", list(data))
                     # self.Data_queue1.get() # now that heat map will take
 
             async def ble_disconnect_waiter():

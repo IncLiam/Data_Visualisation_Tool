@@ -25,11 +25,11 @@ class PyqtgraphPlotSensor:
 
         pen = pg.mkPen(color=(255, 165, 0), width=4)
 
-        # single pressure
+        # single sensor
         self.data1 = np.random.uniform(0, 0, size=100)
         self.curve1 = self.p1.plot(self.data1, pen=pen)
         self.p1.setYRange(0, 1, padding=0)
-        self.p1.setTitle("Single Pressure Sensor Output")
+        self.p1.setTitle("Single Sensor Output")
         self.p1.hideAxis('bottom')
         self.p1.hideAxis('left')
 

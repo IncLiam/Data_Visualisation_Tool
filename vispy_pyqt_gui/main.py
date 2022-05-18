@@ -54,7 +54,7 @@ class GuiMainWindow(QWidget):
 
         self.setLayout(self.mainLayout)
 
-        self.setWindowTitle("Hyve Dynamics Data Visualisation Tool")
+        self.setWindowTitle("Data Visualisation Tool")
         QApplication.setStyle(QStyleFactory.create("Fusion"))
 
         # Removing help "?" button
@@ -66,7 +66,7 @@ class GuiMainWindow(QWidget):
             # QtCore.Qt.WindowStaysOnTopHint # Ne surtout pas activer, pas du tout ergonomique
         )
 
-        self.setWindowIcon(QtGui.QIcon('images/hyve_icon.ico'))
+        self.setWindowIcon(QtGui.QIcon('images/icon.ico'))
 
         # Adding Maximise and Minimise buttons to window
         self.setWindowFlag(Qt.WindowMinimizeButtonHint, True)
@@ -129,32 +129,16 @@ class GuiMainWindow(QWidget):
     def create_top_left_group_box(self):
         self.topLeftGroupBox = QGroupBox("Connection")
 
-        Button0 = QPushButton("Connect to Temp Sensor via BT")
-        Button0.setStyleSheet("background-color: none; "
-                                #"height: 100px; "
-                                #"width: 200px; "
-                                )
-        Button1 = QPushButton("Connect to Skin via BLE")
-        Button1.setStyleSheet("background-color: none; "
-                                #"height: 100px; "
-                                #"width: 200px; "
-                                )
-        Button2 = QPushButton("Connect")
-        Button2.setStyleSheet("background-color: none; "
-                              # "height: 100px; "
-                              # "width: 200px; "
-                              )
-
+        Button0 = QPushButton("Connect via BT")
+        Button0.setStyleSheet("background-color: none; ")
+        Button1 = QPushButton("Connect via BLE")
+        Button1.setStyleSheet("background-color: none; ")
+        Button2 = QPushButton("Connect via USB")
+        Button2.setStyleSheet("background-color: none; ")
         Button3 = QPushButton("Disconnect")
-        Button3.setStyleSheet("background-color: none; "
-                              # "height: 100px; "
-                              # "width: 200px; "
-                              )
+        Button3.setStyleSheet("background-color: none; ")
         Button4 = QPushButton("Simulate")
-        Button4.setStyleSheet("background-color: none; "
-                                   #"height: 100px; "
-                                   #"width: 200px; "
-                                   )
+        Button4.setStyleSheet("background-color: none; ")
 
         Button0.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         Button1.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -267,10 +251,9 @@ class GuiMainWindow(QWidget):
 
         text = QLabel(
             "<center>" \
-            "<img src=images/hyve_1080w.png/>" \
+            "<img src=images/1080w.png/>" \
             "<p>Data Visualisation Tool<br/>" \
-            "Version 1.0<br/>" \
-            "Copyright &copy; Hyve Dynamics Ltd.</p>" \
+            "Version 1.0</p>" \
             "</center>")
 
         layout = QVBoxLayout()
@@ -282,20 +265,11 @@ class GuiMainWindow(QWidget):
         self.topRightGroupBox = QGroupBox("Visuals")
 
         Button4 = QPushButton("Heat Map")
-        Button4.setStyleSheet("background-color: none; "
-                                   # "height: 100px; "
-                                   # "width: 200px; "
-                                   )
+        Button4.setStyleSheet("background-color: none; ")
         Button5 = QPushButton("Hide Visuals")
-        Button5.setStyleSheet("background-color: none; "
-                                   # "height: 100px; "
-                                   # "width: 200px; "
-                                   )
+        Button5.setStyleSheet("background-color: none; ")
         Button6 = QPushButton("Graph Plot")
-        Button6.setStyleSheet("background-color: none; "
-                                   # "height: 100px; "
-                                   # "width: 200px; "
-                                   )
+        Button6.setStyleSheet("background-color: none; ")
 
         Button4.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         Button5.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -329,7 +303,7 @@ class GuiMainWindow(QWidget):
             try:
                 self.add_heat_map_sensors(self.Data_queue_visuals)
             except:
-                print("connect to sensors ?")
+                print("connected ?")
             buttons_enabler()
         Button4.clicked.connect(show_heat_map)
 
@@ -342,7 +316,7 @@ class GuiMainWindow(QWidget):
                 print(selected_sensor)
                 self.add_graph_sensor(self.Data_queue_visuals, selected_sensor)
             except:
-                print("connect to sensors ?")
+                print("connected?")
             buttons_enabler()
         Button6.clicked.connect(show_graph_plot)
 
@@ -376,9 +350,9 @@ class GuiMainWindow(QWidget):
 
         text = QLabel(
             "<center>" \
-            "<img src=images/hyve_icon_180.png>" \
+            "<img src=images/icon_180.png>" \
             "<br/>" \
-            "<img src=images/hyve_icon_180.png>" \
+            "<img src=images/icon_180.png>" \
             "</center>")
 
         layout = QVBoxLayout()
@@ -397,7 +371,7 @@ class GuiMainWindow(QWidget):
                 self.add_logging()
                 print("adding logging")
             except Exception as ex:
-                print("not addded logging : ", ex) # Affiche l'erreur
+                print("not addded logging : ", ex)
 
         def delete_logging():
             try:
@@ -437,7 +411,7 @@ class GuiMainWindow(QWidget):
         if csv_path[0] == '':
             return False # Cancel
         csv_path = csv_path[0]
-        if not csv_path.lower().endswith(".csv"): # force CSV extension
+        if not csv_path.lower().endswith(".csv"):  # force CSV extension
             csv_path += ".csv"
 
         if self.spreadsheet_logging.start_logging_process(self.Data_queue_logging,csv_path):
@@ -482,8 +456,9 @@ class GuiMainWindow(QWidget):
 
     # get sensor selection from user
     def get_sensor(self):
-        i, ok_pressed = QInputDialog.getInt(self, "Sensor Selection", "Input Sensor Position: 0 <= X <= 30            "
-                                                                      "                 ", 15, 0, 30, 1)
+        i, ok_pressed = QInputDialog.getInt(self, "Point Selection",
+                                            "Input Sensor Position: 0 <= X <= 30            "
+                                            "                 ", 15, 0, 30, 1)
         print(i)
         return i
 

@@ -30,30 +30,23 @@ class LogToSpreadsheet:
         csv_file = open(csv_path, 'w', newline='')
         if not csv_file.writable():
             print("Error : CSV file is not writable")
-            return False  # TODO : message d'erreur pour dire a l'utilisateur qu'il y a un soucis d'ecriture
+            return False  # TODO : create error message
         csv_writer = csv.writer(csv_file, dialect='excel')
 
-        labels = ["Sensor "+str(i) for i in range(1,33)]   # TODO : nom des colonnes automatique ; ici, 32 capteurs
+        labels = ["Sensor "+str(i) for i in range(1, 33)]   # TODO : create automatic sensor number detection
         csv_writer.writerow(labels)
 
         self.in_logging_process_event.set()
 
         while not self.logging_stop_event.is_set():
             array_to_log = self.Data_queue_logging.get()
-            # print("Logging:", array_to_log) # Ne surtout pas activer
-            if array_to_log is not None :
-                # array_to_log est une matrice 8x4
-
-                # On met les valeurs sur une seule ligne
-                table=[]
+            if array_to_log is not None:
+                table = []
                 for L in array_to_log:
                     table += list(L)
-
-                T = [ int(4095*x) for x in table ] # TODO : fonction de traitement des données ;
-                # ici c'est pour passer de [0;1] à [[0;4095]] , à adapter selon le nombre de bit de l'ADC
-
-                csv_writer.writerow(T) # enregistre dans le CSV la ligne
-                csv_file.flush() # écrit dans le fichier immédiatement (évite de garder les données en cache)
+                T = [int(4095*x) for x in table]  # TODO : analyse this section and adapt to input
+                csv_writer.writerow(T)
+                csv_file.flush()
 
         self.in_logging_process_event.clear()
 
