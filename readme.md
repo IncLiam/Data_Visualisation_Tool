@@ -25,9 +25,8 @@ Functionalities of the tool are live heatmap visualisation, live plot visualisat
 <br/>
 
 ## Technologies Used
-### Backtesting
-For testing the strategy on historical data with tools optimised for faster calculations on datasets. For example OHLC 
-charts on minute intervals over months and years.
+This tool was created in python and the source code provides a template for implementing the following libraries and 
+frameworks.
 
 | Language     | GUI Framework | Data Visualisation   |
 |--------------|---------------|----------------------|
