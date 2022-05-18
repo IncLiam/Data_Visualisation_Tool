@@ -3,7 +3,7 @@
 # Serial Data Visualisation Tool
 [![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
 [![Last Commit](https://img.shields.io/badge/last%20commit-may%202022-orange)]()
-> A GUI for visualising serial data 
+> A GUI for visualising serial data in real-time
 
 <br/>
 <p align="left">
@@ -22,7 +22,7 @@ This repository contains the source code of the data visualisation tool. The dat
 makes use of dedicated GPUs and multicore CPUs for increased performance. Currently, the tool supports data from 
 serial COM protocols.
 
-Functionalities of the tool are heatmap visualisation, graph plot visualisations and CSV data logging.
+Functionalities of the tool are live heatmap visualisation, live plot visualisations and CSV data logging.
 
 <br/>
 
