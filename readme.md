@@ -36,11 +36,11 @@ frameworks.
 <br/>
 
 ## Screenshots
-Heatmap Visualisation
-<img src="vispy_pyqt_gui/images/heatmap_screenshot.PNG" alt="drawing" width="300"/> <img src="images/hd_volumes.PNG" alt="drawing" width="400"/>
+Heatmap Visualisation <br/>
+<img src="vispy_pyqt_gui/images/heatmap_screenshot.PNG" alt="drawing" width="500"/>
 
-Graph Visualisation
-<img src="vispy_pyqt_gui/images/graphplot_screenshot.PNG" alt="drawing" width="300"/> <img src="images/hd_volumes.PNG" alt="drawing" width="400"/>
+Graph Visualisation <br/>
+<img src="vispy_pyqt_gui/images/graphplot_screenshot.PNG" alt="drawing" width="500"/>
 
 <br/>
 
