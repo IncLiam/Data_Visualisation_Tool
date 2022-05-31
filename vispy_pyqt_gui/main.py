@@ -251,7 +251,6 @@ class GuiMainWindow(QWidget):
 
         text = QLabel(
             "<center>" \
-            "<img src=images/1080w.png/>" \
             "<p>Data Visualisation Tool<br/>" \
             "Version 1.0</p>" \
             "</center>")
@@ -350,9 +349,7 @@ class GuiMainWindow(QWidget):
 
         text = QLabel(
             "<center>" \
-            "<img src=images/icon_180.png>" \
             "<br/>" \
-            "<img src=images/icon_180.png>" \
             "</center>")
 
         layout = QVBoxLayout()

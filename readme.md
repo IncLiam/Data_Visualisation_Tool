@@ -10,6 +10,7 @@
 
 - [General Info](#general-information) <br/>
 - [Technologies Used](#technologies-used) <br/>
+- [Screenshots](#screenshots) <br/>
 - [Contact](#contact)
 
 </p> 
@@ -32,3 +33,17 @@ frameworks.
 |--------------|---------------|----------------------|
 | Python 3.7.6 | Pyqt5         | Vispy <br/>Pyqtgraph |
 
+<br/>
+
+## Screenshots
+Heatmap Visualisation
+<img src="vispy_pyqt_gui/images/heatmap_screenshot.PNG" alt="drawing" width="300"/> <img src="images/hd_volumes.PNG" alt="drawing" width="400"/>
+
+Graph Visualisation
+<img src="vispy_pyqt_gui/images/graphplot_screenshot.PNG" alt="drawing" width="300"/> <img src="images/hd_volumes.PNG" alt="drawing" width="400"/>
+
+<br/>
+
+## Contact
+Created by [@LiamRichardson](https://www.linkedin.com/in/liam-richardson/)
+<br/>
