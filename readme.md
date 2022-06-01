@@ -22,6 +22,7 @@ makes use of dedicated GPUs and parallel multiprocessing on multicore CPUs for i
 serial COM protocols.
 
 Functionalities of the tool include live heatmap visualisation, live plot visualisations and CSV data logging.
+Communication protocols supported include USB and Bluetooth.
 
 <br/>
 
